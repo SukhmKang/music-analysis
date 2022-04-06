@@ -1,5 +1,5 @@
 # music-analysis
-Project that detects beats within an inputted song and finds its tempo (beats per minute).
+Project that detects beats within an inputted song (.wav file) and finds its tempo (beats per minute).
 
 ## Built With
 
