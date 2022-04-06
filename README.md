@@ -15,4 +15,4 @@ Explain algorithm here
 
 ## Results
 
-Explain algorithm here
+Summarize results
