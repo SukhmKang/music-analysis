@@ -15,9 +15,9 @@ Explain algorithm here
 
 ## Results
 
-| Dataset | Type (Training/Testing) | Number of Correct Songs | Avg. Percent Difference |
+| Dataset | Type (Training/Testing) | Number of Correct Songs | Avg. Percent Error |
 | --- | --- | --- | --- |
-| SPOTIFY TOP 100 2016 | TRAINING | ??/100 | ?% |
+| SPOTIFY TOP 100 2016 | TRAINING | 87/100 | 4.15% |
 | SPOTIFY TOP 100 2018 | TRAINING | 91/100 | ?% |
 | BILLBOARD HOT 100 YEAR-END 2021 | TESTING | 88/100 | 2.97% |
 | BILLBOARD HOT 100 APRIL 2022 | TESTING | 87/100 | ?% |
