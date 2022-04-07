@@ -1,4 +1,7 @@
 # music-analysis
+
+**Ishan Balakrishnan & Sukhm Kang**
+
 Project that detects beats within an inputted song (.wav file) and finds its tempo (beats per minute).
 
 ## Built With
@@ -11,14 +14,14 @@ Project that detects beats within an inputted song (.wav file) and finds its tem
 
 ## Algorithm Summary
 
-Explain algorithm here
+Explain algorithm here - 
 
 ## Results
 
 | Dataset | Type (Training/Testing) | Number of Correct Songs | Avg. Percent Error |
 | --- | --- | --- | --- |
 | SPOTIFY TOP 100 2016 | TRAINING | 87/100 | 4.15% |
-| SPOTIFY TOP 100 2018 | TRAINING | 91/100 | ?% |
+| SPOTIFY TOP 100 2018 | TRAINING | 90/100 | 2.81% |
 | BILLBOARD HOT 100 YEAR-END 2021 | TESTING | 88/100 | 2.97% |
 | BILLBOARD HOT 100 APRIL 2022 | TESTING | 87/100 | ?% |
 
