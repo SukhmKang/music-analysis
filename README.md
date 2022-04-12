@@ -14,7 +14,7 @@ Project that detects beats within an inputted song (.wav file) and finds its tem
 
 ## Algorithm Summary
 
-Explain algorithm here - 
+Please see our academic paper, "Beat Detection Algorithm for Popular Music with Fast Fourier Transform," for an in-depth summary of the implementation, methodology, training, and testing of the algorithm.
 
 ## Results
 
