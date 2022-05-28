@@ -75,11 +75,7 @@ def beat_detection(arg,dist_input=43):
        print('Usage: python3 bpm.py filename')
        return
     arg=arg[1]
-    try:
-        filepath = f'Music/{arg}.wav'
-    except FileNotFoundError:
-        f"Error: file {arg} does not exist."
-        return 0
+    filepath = f'Music/{arg}.wav'
 
     #Number of bytes to read from the file at once (should be a power of 2)
     CHUNK = 1024
