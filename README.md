@@ -18,7 +18,7 @@ Please see our academic paper, "Beat Detection Algorithm for Popular Music with 
 
 ## Results
 
-| Dataset | Type (Training/Testing) | Number of Correct Songs | Avg. Percent Error |
+| Dataset | Type (Training/Testing) | Algorithm Accuracy | Avg. Percent Error |
 | --- | --- | --- | --- |
 | SPOTIFY TOP 100 2016 | TRAINING | 88/100 | 4.15% |
 | SPOTIFY TOP 100 2018 | TRAINING | 93/100 | 2.06% |
