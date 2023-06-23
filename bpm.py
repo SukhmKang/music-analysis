@@ -5,6 +5,18 @@ from sys import argv
 import matplotlib.pyplot as plt
 from scipy.signal import hilbert, find_peaks
 import warnings
+import os
+from sklearn.cluster import SpectralClustering
+
+CB91_Blue = '#2CBDFE'
+CB91_Green = '#47DBCD'
+CB91_Pink = '#F3A0F2'
+CB91_Purple = '#9D2EC5'
+CB91_Violet = '#661D98'
+CB91_Amber = '#F5B14C'
+color_list = [CB91_Blue, CB91_Pink, CB91_Green, CB91_Amber,
+              CB91_Purple, CB91_Violet]
+plt.rcParams['axes.prop_cycle'] = plt.cycler(color=color_list)
 
 BILLBOARD100_2021 = ['levitating feat dababy','save your tears remix','blinding lights','mood','good 4 u', 'kiss me more', 'leave the door open', 'drivers license',
 'montero', 'peaches', 'butter', 'stay', 'deja vu', 'positions', 'bad habits', 'heat waves', 'without you', 'forever after all',
@@ -56,6 +68,45 @@ SPOTIFY2016 = ['closer','love yourself','one dance','starboy','hello','panda','h
 'one call away','papercuts','perfect strangers','pink + white','ride','say it','say it2','sex','sexual','somebody else','sorry beyonce',
 'sucker for pain','sweet lovin','tears','the sound','this ones for you','when you love someone','white iverson','you & me']
 
+ROCK_HITS = [
+'ocean avenue','hysteria','boulevard of broken dreams','cant stop','what ive done','chop suey','seven nation army','mr brightside',
+'kryptonite','sugar were going down','misery business','dani california','holiday','last resort','in the end','i miss you',
+'californication','youre gonna go far kid','toxicity', 'dance dance','the middle','the kill','i write sins not tragedies','take a look around',
+'bring me to life','savior','numb','best of you','the diary of jane','take me out','welcome to the black parade','i hate everything about you',
+'sex on fire','im not okay','like a stone','the pretender','when you were young','face down','its been awhile','island in the sun',
+'she hates me','uprising hq','yellow','smooth criminal','american idiot','the anthem','thnks fr th mmrs','paralyzer','all my life',
+'the reason','no one knows','in too deep','supermassive black hole','first date','youth of the nation','rollin','complicated',
+'gives you hell','fake it','joker and the thief','miss murder','higher','im just a kid','beverly hills',
+'dear maria count me in','use somebody','through glass','wish you were here','last nite','steady as she goes','are you gonna be my girl',
+'want you bad','welcome home','reptilia','hate to say i told you so','jerk it out','i bet you look good on the dancefloor','float on',
+'your touch','a punk','you know youre right','rock n roll train','obstacle 1','banquet','hey there delilah','little sister','change in the house of flies',
+'dig','woman','the bitter end','judith','there there','the taste of ink','everyday is exactly the same','cute without the e','fell in love with a girl',
+'stop crying your heart out','beautiful day','how you remind me'
+]
+
+def get_all_filenames(dir):
+    '''
+    Produces a list of all of the filenames in a director
+    '''
+    lst = []
+    for filename in os.listdir(dir):
+        lst.append(dir + "/" + filename)
+    return lst
+
+def get_actual_bpm_giant_steps(song):
+    '''
+    Produces the actual BPM of a song from the Giant Steps Dataset by reading from
+    Giant Steps Annotations
+    '''
+    sng = song.split('/')
+    filename = sng[-1]
+    filename = filename.split('.')
+    filename = filename[0] + '.' + filename[1]
+    with open(f"giantsteps-tempo-dataset-master/annotations/tempo/{filename}.bpm", "r") as f:
+        l = f.readline()
+        l = l.strip()
+    return float(l)
+
 def remove_outliers(data,deviations=2):
     '''
     Given an array of numbers (data), removes any element outside of inputted # of deviations of the mean.
@@ -67,15 +118,17 @@ def remove_outliers(data,deviations=2):
     indices_to_keep = np.where(diff_from_avg <= (deviations * stdev))
     return data[indices_to_keep]
 
-def beat_detection(arg,dist_input=43):
+def beat_detection(arg,dist_input=43, window_size=5):
     '''
     Given a file name of a .wav file and a minimum distance between peaks, returns an estimated BPM of the song.
     '''
-    if len(arg) != 2:
-       print('Usage: python3 bpm.py filename')
-       return
-    arg=arg[1]
-    filepath = f'Music/{arg}.wav'
+    #if len(arg) != 2:
+    #   print('Usage: python3 bpm.py filename')
+    #   return
+    #arg=arg[1]
+    #filepath = f'Audio Files/Rock Hits/{arg}.wav'
+    warnings.filterwarnings('ignore')
+    filepath = arg
 
     #Number of bytes to read from the file at once (should be a power of 2)
     CHUNK = 1024
@@ -83,9 +136,9 @@ def beat_detection(arg,dist_input=43):
     #Opening file using wave module
     wf = wave.open(filepath, 'rb')
     channels = wf.getnchannels()
-    if channels != 2:
-        print('Error: This program is designed for stereo audio, not mono or music with more than 2 channels.')
-        return 0
+    # if channels != 2:
+    #     print('Error: This program is designed for stereo audio, not mono or music with more than 2 channels.')
+    #     return 0
 
     sampling_rate = wf.getframerate()
     if sampling_rate not in [44100,48000]:
@@ -147,8 +200,15 @@ def beat_detection(arg,dist_input=43):
         raw = np.frombuffer(data, dtype='<i2')
         #Left channel is every other element of the array starting from the 0th index
         #Right channel is every other element of the array starting from the 1st index
-        left = raw[::2]
-        right = raw[1::2]
+        if channels == 2:
+            left = raw[::2]
+            right = raw[1::2]
+        elif channels == 1:
+            left = raw[:]
+            right = raw[:]
+        else:
+            print("error: can only do stereo and mono")
+            return -1
         #Calculates the Fourier coefficients of the left channel
         left_hat = np.fft.fft(left,CHUNK)
         right_hat = np.fft.fft(right,1024)
@@ -208,19 +268,19 @@ def beat_detection(arg,dist_input=43):
     #dist is the minimum distance between peaks
     dist=dist_input
     #Window size is the size of the moving window of the peaks
-    window_size = 5
+    #window_size = 5
     #Master differences will be array of the average distance between the peaks in each moving window
     master_differences = []
     #Master standard deviation will be array of the standard deviation of the distance between the peaks in each moving window
     master_std_dev = []
 
     #Setting up plot information
-    fig,axs = plt.subplots(7,1)
-    fig.suptitle(arg + ' left channel', fontsize=16)
+    # fig,axs = plt.subplots(7,1)
+    # fig.suptitle(arg + ' left channel', fontsize=16)
 
-    plt.sca(axs[0])
+    # plt.sca(axs[0])
     #Plotting the power level of left channel sub-bass against time
-    plt.plot(export.index,export['left sub-bass'],color='red')
+    # plt.plot(export.index,export['left sub-bass'],color='red')
     #Calculating the envelope of the sub-bass and plotting it against time
     analytic_signal = hilbert(export['left sub-bass'])
     amplitude_envelope = np.abs(analytic_signal)
@@ -246,12 +306,12 @@ def beat_detection(arg,dist_input=43):
     sub_bass_diffs = np.array(sub_bass_diffs)
     sub_bass_output = sub_bass_diffs[good_indices]
     #Plots peaks as x's on the graph
-    plt.plot(export.index[peaks],amplitude_envelope[peaks],'x',color='orange')
-    plt.plot(export.index,amplitude_envelope)
-    axs[0].title.set_text('Left Sub-Bass')
+    # plt.plot(export.index[peaks],amplitude_envelope[peaks],'x',color='orange')
+    # plt.plot(export.index,amplitude_envelope)
+    # axs[0].title.set_text('Left Sub-Bass')
 
-    plt.sca(axs[1])
-    plt.plot(export.index,export['left bass'],color='red')
+    # plt.sca(axs[1])
+    # plt.plot(export.index,export['left bass'],color='red')
     analytic_signal = hilbert(export['left bass'])
     amplitude_envelope = np.abs(analytic_signal)
     peaks = find_peaks(np.array(amplitude_envelope),distance=dist,height=np.mean(amplitude_envelope))[0]
@@ -272,12 +332,12 @@ def beat_detection(arg,dist_input=43):
     good_indices = np.array(bass_stds.nsmallest(int(0.1 * len(bass_stds))).index,dtype='int')
     bass_diffs = np.array(bass_diffs)
     bass_output = bass_diffs[good_indices]
-    plt.plot(export.index[peaks],amplitude_envelope[peaks],'x',color='orange')
-    plt.plot(export.index,amplitude_envelope)
-    axs[1].title.set_text('Left Bass')
+    # plt.plot(export.index[peaks],amplitude_envelope[peaks],'x',color='orange')
+    # plt.plot(export.index,amplitude_envelope)
+    # axs[1].title.set_text('Left Bass')
 
-    plt.sca(axs[2])
-    plt.plot(export.index,export['left lower midrange'],color='red')
+    # plt.sca(axs[2])
+    # plt.plot(export.index,export['left lower midrange'],color='red')
     analytic_signal = hilbert(export['left lower midrange'])
     amplitude_envelope = np.abs(analytic_signal)
     peaks = find_peaks(np.array(amplitude_envelope),distance=dist,height=np.mean(amplitude_envelope))[0]
@@ -298,12 +358,12 @@ def beat_detection(arg,dist_input=43):
     good_indices = np.array(lower_mid_stds.nsmallest(int(0.1 * len(lower_mid_stds))).index,dtype='int')
     lower_mid_diffs = np.array(lower_mid_diffs)
     lower_mid_output = lower_mid_diffs[good_indices]
-    plt.plot(export.index[peaks],amplitude_envelope[peaks],'x',color='orange')
-    plt.plot(export.index,amplitude_envelope)
-    axs[2].title.set_text('Left Lower Midrange')
+    # plt.plot(export.index[peaks],amplitude_envelope[peaks],'x',color='orange')
+    # plt.plot(export.index,amplitude_envelope)
+    # axs[2].title.set_text('Left Lower Midrange')
 
-    plt.sca(axs[3])
-    plt.plot(export.index,export['left midrange'],color='red')
+    # plt.sca(axs[3])
+    # plt.plot(export.index,export['left midrange'],color='red')
     analytic_signal = hilbert(export['left midrange'])
     amplitude_envelope = np.abs(analytic_signal)
     peaks = find_peaks(np.array(amplitude_envelope),distance=dist,height=np.mean(amplitude_envelope))[0]
@@ -324,12 +384,12 @@ def beat_detection(arg,dist_input=43):
     good_indices = np.array(mid_stds.nsmallest(int(0.1 * len(mid_stds))).index,dtype='int')
     mid_diffs = np.array(mid_diffs)
     mid_output = mid_diffs[good_indices]
-    plt.plot(export.index[peaks],amplitude_envelope[peaks],'x',color='orange')
-    plt.plot(export.index,amplitude_envelope)
-    axs[3].title.set_text('Left Midrange')
+    # plt.plot(export.index[peaks],amplitude_envelope[peaks],'x',color='orange')
+    # plt.plot(export.index,amplitude_envelope)
+    # axs[3].title.set_text('Left Midrange')
 
-    plt.sca(axs[4])
-    plt.plot(export.index,export['left higher midrange'],color='red')
+    # plt.sca(axs[4])
+    # plt.plot(export.index,export['left higher midrange'],color='red')
     analytic_signal = hilbert(export['left higher midrange'])
     amplitude_envelope = np.abs(analytic_signal)
     peaks = find_peaks(np.array(amplitude_envelope),distance=dist,height=np.mean(amplitude_envelope))[0]
@@ -350,12 +410,12 @@ def beat_detection(arg,dist_input=43):
     good_indices = np.array(higher_mid_stds.nsmallest(int(0.1 * len(higher_mid_stds))).index,dtype='int')
     higher_mid_diffs = np.array(higher_mid_diffs)
     higher_mid_output = higher_mid_diffs[good_indices]
-    plt.plot(export.index[peaks],amplitude_envelope[peaks],'x',color='orange')
-    plt.plot(export.index,amplitude_envelope)
-    axs[4].title.set_text('Left Higher Midrange')
+    # plt.plot(export.index[peaks],amplitude_envelope[peaks],'x',color='orange')
+    # plt.plot(export.index,amplitude_envelope)
+    # axs[4].title.set_text('Left Higher Midrange')
 
-    plt.sca(axs[5])
-    plt.plot(export.index,export['left presence'],color='red')
+    # plt.sca(axs[5])
+    # plt.plot(export.index,export['left presence'],color='red')
     analytic_signal = hilbert(export['left presence'])
     amplitude_envelope = np.abs(analytic_signal)
     peaks = find_peaks(np.array(amplitude_envelope),distance=dist,height=np.mean(amplitude_envelope))[0]
@@ -376,12 +436,12 @@ def beat_detection(arg,dist_input=43):
     good_indices = np.array(presence_stds.nsmallest(int(0.1 * len(presence_stds))).index,dtype='int')
     presence_diffs = np.array(presence_diffs)
     presence_output = presence_diffs[good_indices]
-    plt.plot(export.index[peaks],amplitude_envelope[peaks],'x',color='orange')
-    plt.plot(export.index,amplitude_envelope)
-    axs[5].title.set_text('Left Presence')
+    # plt.plot(export.index[peaks],amplitude_envelope[peaks],'x',color='orange')
+    # plt.plot(export.index,amplitude_envelope)
+    # axs[5].title.set_text('Left Presence')
 
-    plt.sca(axs[6])
-    plt.plot(export.index,export['left brilliance'],color='red')
+    # plt.sca(axs[6])
+    # plt.plot(export.index,export['left brilliance'],color='red',label='Power Level')
     analytic_signal = hilbert(export['left brilliance'])
     amplitude_envelope = np.abs(analytic_signal)
     brilliance_diffs = []
@@ -402,31 +462,36 @@ def beat_detection(arg,dist_input=43):
     good_indices = np.array(brilliance_stds.nsmallest(int(0.1 * len(brilliance_stds))).index,dtype='int')
     brilliance_diffs = np.array(brilliance_diffs)
     brilliance_output = brilliance_diffs[good_indices]
-    plt.plot(export.index[peaks],amplitude_envelope[peaks],'x',color='orange')
-    plt.plot(export.index,amplitude_envelope)
-    axs[6].title.set_text('Left Brilliance')
+    # plt.plot(export.index[peaks],amplitude_envelope[peaks],'x',color='orange',label='Peaks')
+    # plt.plot(export.index,amplitude_envelope,label="Envelope")
+    # axs[6].title.set_text('Left Brilliance')
 
-    plt.xlabel('Time (s)')
-    plt.ylabel('Power Level')
-    plt.show()
+    # plt.xlabel('Time (s)')
+    # plt.ylabel('Power Level (V^2)/Hz')
+    # plt.legend()
+    # plt.show()
 
     #Prints average diffs with the lowest standard deviations within each audio group (This is not used in the final result and is just to see the data)
-    print('sub_bass',sub_bass_output)
-    print('bass',bass_output)
-    print('lower mid',lower_mid_output)
-    print('mid',mid_output)
-    print('higher mid',higher_mid_output)
-    print('presence',presence_output)
-    print('brilliance',brilliance_output)
+    # print('sub_bass',sub_bass_output)
+    # print('bass',bass_output)
+    # print('lower mid',lower_mid_output)
+    # print('mid',mid_output)
+    # print('higher mid',higher_mid_output)
+    # print('presence',presence_output)
+    # print('brilliance',brilliance_output)
 
     #Converting master diff and master std dev into numpy arrays
     master_differences = np.array(master_differences)
+    #print(list(master_differences))
+    #return (60*2) / (np.mean(master_differences) * (song_length/counter))
     master_std_dev = np.array(master_std_dev)
+    #print(list(master_std_dev))
     #Removing windows where the averge distance is exactly equal to the minimum distance, as these are not likely to be beats
     not_dist_indices = np.where(master_differences != dist)[0]
     master_differences = master_differences[not_dist_indices]
     master_std_dev = master_std_dev[not_dist_indices]
     master_std_dev = pd.Series(master_std_dev)
+
     #While loop reduces the results down to just the 5 windows with the smallest standard deviation (and thus the most regularity between the peaks)
     indices_length = 0
     cutoff = 0.001
@@ -435,31 +500,18 @@ def beat_detection(arg,dist_input=43):
         indices_length = len(good_indices)
         cutoff+=0.001
     best_beats = master_differences[good_indices]
+
+    #print('best guesses',best_beats)
     #Removes any element outside of one standard deviation of the mean of the avg diffs
     best_beats_no_outliers = np.sort(remove_outliers(best_beats,1))
     #Prints out the algorithms 'best guesses' for the BPM's (still in units of samples)
-    print(best_beats_no_outliers)
+    #print('best beats no outliers', best_beats_no_outliers)
     #Converts from samples to BPM
     bpm = 60 / (best_beats_no_outliers.mean() * (song_length/counter))
-    print('BPM:',bpm * 2)
+    #print('BPM:',bpm * 4)
     return bpm * 2
-
-def training_testing(dataset):
-    '''
-    Function for training and testing the BPM algorithm.
-    '''
-    dist_input=43
-    songtobpm = {'song': [], 'BPM': []}
-    for song in dataset:
-        print(song)
-        bpm = beat_detection(song,dist_input)
-        print(bpm)
-        songtobpm['song'].append(song)
-        songtobpm['BPM'].append(bpm)
-    pd.DataFrame.from_dict(songtobpm).to_excel(f'Billboard 2021 Results Moving Window Distance {dist_input}.xlsx')
 
 if __name__ == '__main__':
     #Removes the Numpy Complex number warning
     warnings.filterwarnings('ignore')
-    #training_testing(BILLBOARD100_2021)
-    beat_detection(argv,43)
+    print(beat_detection(argv[1],44))
