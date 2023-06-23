@@ -18,12 +18,14 @@ Please see our academic paper, "Global Tempo Estimation Algorithm for Popular Mu
 
 ## Results
 
-| Dataset | Type (Training/Testing) | Algorithm Accuracy | Avg. Percent Error |
-| --- | --- | --- | --- |
-| SPOTIFY TOP 100 2016 | TRAINING | 88/100 | 4.15% |
-| SPOTIFY TOP 100 2018 | TRAINING | 93/100 | 2.06% |
-| BILLBOARD HOT 100 YEAR-END 2021 | TESTING | 86/100 | 3.79% |
-| BILLBOARD HOT 100 APRIL 2022 | TESTING | 86/100 | 3.82% |
+| Dataset | Type (Training/Testing) | Algorithm Accuracy |
+| --- | --- | --- |
+| SPOTIFY TOP 100 2016 | TRAINING | 87/100 |
+| SPOTIFY TOP 100 2018 | TRAINING | 93/100 |
+| BILLBOARD HOT 100 YEAR-END 2021 | TESTING | 91/100 |
+| BILLBOARD HOT 100 APRIL 2022 | TESTING | 89/100 |
+| SPOTIFY '00s ROCK ANTHEMS | TESTING | 85/100 |
+| GIANT STEPS | TESTING | 562/662 |
 
 ## Authors & Contact Information
 
