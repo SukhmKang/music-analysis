@@ -2,7 +2,7 @@
 
 **Ishan Balakrishnan & Sukhm Kang**
 
-Project that detects beats within an inputted song (.wav file) and finds its tempo (beats per minute). Annotations for the tesing datasets are available in a parseable format at [this](https://github.com/SukhmKang/music-analysis/blob/main/Annotations.zip) link.
+Project that detects beats within an inputted song (.wav file) and finds its tempo (beats per minute). Annotations for the testing datasets are available in a parseable format at [this](https://github.com/SukhmKang/music-analysis/blob/main/Annotations.zip) link.
 
 ## Built With
 
